@@ -1,0 +1,40 @@
+{% extends 'index.html' %}
+
+{% block content %}
+<!-- Show all todo items -->
+<div class="card">
+    <div class="card-header bg-dark d-flex align-items-center">
+        <h1 class="text-white me-auto">Task List</h1>
+        <a class="bi bi-plus-lg btn btn-success" href="{% url 'create' %}"> Add</a>
+    </div>
+
+    <div class="card-body">
+        <ul class="list-group list-group-flush">
+            {% if items %}
+                {% for item in items %}
+                <li class="list-group-item">
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <p>{{ item.task }}</p>
+                        </div>
+                        <div class="col-sm-3">
+                            <p>{{ item.category }}</p>
+                        </div>
+                        <div class="col-sm-4">
+                            <p>{{ item.status }}</p>
+                        </div>
+                        <div class="col-sm-2">
+                            <a class="bi bi-book-fill me-3" style="font-size: 1.5rem; color: orange;" href="{% url 'details' item.id %}"></a>
+                            <a class="bi bi-pen-fill me-3" style="font-size: 1.5rem; color: blue;" href="{% url 'update' item.id %}"></a>
+                            <a class="bi bi-trash-fill" style="font-size: 1.5rem; color: red;" href="{% url 'delete' item.id %}"></a>
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            {% else %}
+                <h3>No item found!...</h3>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

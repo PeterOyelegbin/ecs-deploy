@@ -1,0 +1,17 @@
+{% extends 'index.html' %}
+
+{% block content %}
+<!-- Show details of todo item -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h1>{{ item.task }}</h1>
+        <label>Category:  {{ item.category }}</label>
+    </div>
+    <div class="card-body">
+        <p>Details: {{ item.details }}</p>
+    </div>
+    <div class="card-footer">
+        <p>Status:  {{ item.status }}</p>
+    </div>
+</div>
+{% endblock %}
