@@ -1,0 +1,61 @@
+{
+    "family": "todo-task-fargate",
+    "networkMode": "awsvpc",
+    "executionRoleArn": "arn:aws:iam::226290659927:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::226290659927:role/ecsTaskRole",
+    "cpu": "256",
+    "memory": "512",
+    "requiresCompatibilities": ["FARGATE"],
+    "containerDefinitions": [
+        {
+            "name": "todo-app-fargate",
+            "image": "peteroyelegbin/todo-app:v1.0.0",
+            "portMappings": [
+                {
+                "containerPort": 8000,
+                "protocol": "tcp"
+                }
+            ],
+            "environment": [
+                {
+                "name": "DEBUG",
+                "value": "False"
+                },
+                {
+                "name": "DB_HOST",
+                "value": "db4free.net"
+                },
+                {
+                "name": "DB_PORT",
+                "value": "3306"
+                },
+                {
+                "name": "DB_USER",
+                "value": "peter_oyelegbin"
+                },
+                {
+                "name": "DB_NAME",
+                "value": "todo_django"
+                }
+            ],
+            "secrets": [
+                {
+                "name": "SECRET_KEY",
+                "valueFrom": "arn:aws:secretsmanager:us-east-1:226290659927:secret:todo-app-S2oBvg"
+                },
+                {
+                "name": "DB_PASS",
+                "valueFrom": "arn:aws:secretsmanager:us-east-1:226290659927:secret:todo-app-S2oBvg"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                "awslogs-group": "/ecs/todo-app-fargate",
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "ecs"
+                }
+            }
+        }
+    ]
+}

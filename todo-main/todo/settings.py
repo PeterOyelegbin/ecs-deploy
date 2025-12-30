@@ -30,9 +30,9 @@ SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", cast=bool)
 
-ALLOWED_HOSTS = ['*']
-# ALLOWED_HOSTS = ['127.0.0.1', '.vercel.app', '192.168.49.2']
+ALLOWED_HOSTS = ["*"]
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 
