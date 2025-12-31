@@ -2,7 +2,7 @@
     "family": "todo-task-fargate",
     "networkMode": "awsvpc",
     "executionRoleArn": "arn:aws:iam::226290659927:role/ecsTaskExecutionRole",
-    "taskRoleArn": "arn:aws:iam::226290659927:role/ecsTaskRole",
+    "taskRoleArn": "arn:aws:iam::226290659927:role/ecsTaskExecutionRole",
     "cpu": "256",
     "memory": "512",
     "requiresCompatibilities": ["FARGATE"],
@@ -41,17 +41,17 @@
             "secrets": [
                 {
                 "name": "SECRET_KEY",
-                "valueFrom": "arn:aws:secretsmanager:us-east-1:226290659927:secret:todo-app-S2oBvg"
+                "valueFrom": "arn:aws:secretsmanager:us-east-1:226290659927:secret:todo-app-S2oBvg:SECRET_KEY::"
                 },
                 {
                 "name": "DB_PASS",
-                "valueFrom": "arn:aws:secretsmanager:us-east-1:226290659927:secret:todo-app-S2oBvg"
+                "valueFrom": "arn:aws:secretsmanager:us-east-1:226290659927:secret:todo-app-S2oBvg:DB_PASS::"
                 }
             ],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                "awslogs-group": "/ecs/todo-app-fargate",
+                "awslogs-group": "/ecs/todo-app",
                 "awslogs-region": "us-east-1",
                 "awslogs-stream-prefix": "ecs"
                 }
