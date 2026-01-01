@@ -41,11 +41,11 @@
             "secrets": [
                 {
                 "name": "SECRET_KEY",
-                "valueFrom": "arn:aws:secretsmanager:us-east-1:226290659927:secret:todo-app-S2oBvg:SECRET_KEY::"
+                "valueFrom": "arn:aws:secretsmanager:us-east-1:226290659927:secret:todo-app-secrets-yFzL0N:SECRET_KEY::"
                 },
                 {
                 "name": "DB_PASS",
-                "valueFrom": "arn:aws:secretsmanager:us-east-1:226290659927:secret:todo-app-S2oBvg:DB_PASS::"
+                "valueFrom": "arn:aws:secretsmanager:us-east-1:226290659927:secret:todo-app-secrets-yFzL0N:DB_PASS::"
                 }
             ],
             "logConfiguration": {

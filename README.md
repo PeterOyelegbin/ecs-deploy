@@ -97,11 +97,15 @@ Create Task Execution Role (if not existing)
     ```bash
     # Create the role
     aws iam create-role --role-name ecsTaskExecutionRole \
-        --assume-role-policy-document file://$HOME/ecs/ecs-trust-policy.json
+        --assume-role-policy-document file://ecs-trust-policy.json
 
-    # Attach the managed policy
+    # Attach the ECS task execution policy (for pulling images, CloudWatch logs, etc.)
     aws iam attach-role-policy --role-name ecsTaskExecutionRole \
         --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+    # Attach Secrets Manager read-only policy (for retrieving secrets)
+    aws iam attach-role-policy --role-name ecsTaskExecutionRole \
+        --policy-arn arn:aws:iam::aws:policy/AWSSecretsManagerClientReadOnlyAccess
     ```
 
 8. Store Secrets in AWS Secrets Manager
@@ -189,7 +193,7 @@ aws logs create-log-group --log-group-name /ecs/todo-app --region us-east-1
     - Register the task definitions:
     ```bash
     aws ecs register-task-definition \
-        --cli-input-json file://$HOME/ecs/task-definition-fargate.json --region us-east-1
+        --cli-input-json file://task-definition-fargate.json --region us-east-1
     ```
 
 11. Create Security Groups
@@ -241,7 +245,7 @@ aws logs create-log-group --log-group-name /ecs/todo-app --region us-east-1
     ```bash
     aws elbv2 create-target-group --name todo-tg --protocol HTTP \
         --port 8000 --target-type ip --vpc-id <YOUR_VPC_ID> \
-        --health-check-path /health/ --health-check-interval-seconds 30 \
+        --health-check-path / --health-check-interval-seconds 30 \
         --health-check-timeout-seconds 5 --healthy-threshold-count 2 \
         --unhealthy-threshold-count 2 --region us-east-1 \
         --query 'TargetGroups[0].TargetGroupArn' --output text
@@ -285,6 +289,10 @@ aws ecs delete-service --cluster todo-cluster-fargate \
 
 # Wait for service to be deleted, then delete cluster
 aws ecs delete-cluster --cluster todo-cluster-fargate --region us-east-1
+
+# Then deregister with the specific revision
+aws ecs deregister-task-definition --task-definition todo-task-fargate:<ID> \
+    --region us-east-1
 
 # Delete ALB
 aws elbv2 delete-load-balancer --load-balancer-arn <ALB_ARN> --region us-east-1
