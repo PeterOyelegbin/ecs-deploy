@@ -30,15 +30,31 @@ docker system prune --volumes
 
 ## Delpoy to ECS
 1. Build image
-`docker build -t todo-app .`
+`docker build -t todo-app:v1.0.0 .`
 
-2. Tag image
-`docker tag todo-app:v1.0.0 peteroyelegbin/todo-app:v1.0.0`
+2. Get Image ID
+`docker images`
 
-3. Push to Docker Hub
-`docker push peteroyelegbin/todo-app:v1.0.0`
+3. Test the built image
+```bash
+docker run -d -p 80:8000 \
+  -e SECRET_KEY=your_app_secret \
+  -e DEBUG=False \
+  -e DB_HOST=your_db_host \
+  -e DB_PORT=3306 \
+  -e DB_NAME=your_db_name \
+  -e DB_USER=your_db_user \
+  -e DB_PASS=your_db_password \
+  <IMAGE_ID>
+```
 
-4. Create ECS Cluster
+4. Tag image
+`docker tag todo-app:v1.0.0 dockerhub_username/todo-app:v1.0.0`
+
+5. Push to Docker Hub
+`docker push dockerhub_username/todo-app:v1.0.0`
+
+6. Create ECS Cluster
     - For EC2 Launch Type:
     ```bash
     aws ecs create-cluster --cluster-name todo-cluster-ec2 \
@@ -52,27 +68,69 @@ docker system prune --volumes
     aws ecs create-cluster --cluster-name todo-cluster-fargate --region us-east-1
     ```
 
-5. Create Task Definition
+7. Create app secret in AWS Secret Manager
+
+
+8. Create Task Definition
     - EC2 Task Definition (task-definition-ec2.json):
     ```bash
     {
-        "family": "django-task-ec2",
+        "family": "todo-task-ec2",
         "networkMode": "bridge",
+        "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
         "cpu": "256",
         "memory": "512",
         "requiresCompatibilities": ["EC2"],
         "containerDefinitions": [
             {
-            "name": "django-container",
-            "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/django-app:latest",
-            "portMappings": [
-                {
-                "containerPort": 8000,
-                "hostPort": 0
+                "name": "todo-app-ec2",
+                "image": "peteroyelegbin/todo-app:v1.0.0",
+                "portMappings": [
+                    {
+                    "containerPort": 8000,
+                    "hostPort": 0
+                    }
+                ],
+                "environment": [
+                    {
+                    "name": "DEBUG",
+                    "value": "False"
+                    },
+                    {
+                    "name": "DB_HOST",
+                    "value": "db4free.net"
+                    },
+                    {
+                    "name": "DB_PORT",
+                    "value": "3306"
+                    },
+                    {
+                    "name": "DB_USER",
+                    "value": "peter_oyelegbin"
+                    },
+                    {
+                    "name": "DB_NAME",
+                    "value": "todo_django"
+                    }
+                ],
+                "secrets": [
+                    {
+                    "name": "SECRET_KEY",
+                    "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:todo-app-S2oBvg:SECRET_KEY::"
+                    },
+                    {
+                    "name": "DB_PASS",
+                    "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:todo-app-S2oBvg:DB_PASS::"
+                    }
+                ],
+                "logConfiguration": {
+                    "logDriver": "awslogs",
+                    "options": {
+                    "awslogs-group": "/ecs/todo-app",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "ecs"
+                    }
                 }
-            ],
-            "environment": [...],
-            "logConfiguration": {...}
             }
         ]
     }
@@ -80,7 +138,7 @@ docker system prune --volumes
     - Register EC2 task definitions:
     ```bash
     aws ecs register-task-definition \
-        --cli-input-json file://task-definition-ec2.json --region us-east-1
+        --cli-input-json file://$HOME/Documents/ecs/tasks/task-definition-ec2.json --region us-east-1
     ```
 
     ---
@@ -88,51 +146,63 @@ docker system prune --volumes
     - Fargate Task Definition (task-definition-fargate.json):
     ```bash
     {
-        "family": "django-task-fargate",
+        "family": "todo-task-fargate",
         "networkMode": "awsvpc",
         "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
-        "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole",
+        "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
         "cpu": "256",
         "memory": "512",
         "requiresCompatibilities": ["FARGATE"],
         "containerDefinitions": [
             {
-            "name": "django-container",
-            "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/django-app:latest",
-            "portMappings": [
-                {
-                "containerPort": 8000,
-                "protocol": "tcp"
+                "name": "todo-app-fargate",
+                "image": "peteroyelegbin/todo-app:v1.0.0",
+                "portMappings": [
+                    {
+                    "containerPort": 8000,
+                    "protocol": "tcp"
+                    }
+                ],
+                "environment": [
+                    {
+                    "name": "DEBUG",
+                    "value": "False"
+                    },
+                    {
+                    "name": "DB_HOST",
+                    "value": "db4free.net"
+                    },
+                    {
+                    "name": "DB_PORT",
+                    "value": "3306"
+                    },
+                    {
+                    "name": "DB_USER",
+                    "value": "peter_oyelegbin"
+                    },
+                    {
+                    "name": "DB_NAME",
+                    "value": "todo_django"
+                    }
+                ],
+                "secrets": [
+                    {
+                    "name": "SECRET_KEY",
+                    "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:SECRET_NAME:SECRET_KEY::"
+                    },
+                    {
+                    "name": "DB_PASS",
+                    "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:SECRET_NAME:DB_PASS::"
+                    }
+                ],
+                "logConfiguration": {
+                    "logDriver": "awslogs",
+                    "options": {
+                    "awslogs-group": "/ecs/todo-app",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "ecs"
+                    }
                 }
-            ],
-            "environment": [
-                {
-                "name": "DATABASE_URL",
-                "value": "postgresql://admin:password@django-db.xxxxxx.us-east-1.rds.amazonaws.com:5432/django_db"
-                },
-                {
-                "name": "DJANGO_SECRET_KEY",
-                "value": "your-secret-key"
-                },
-                {
-                "name": "DEBUG",
-                "value": "False"
-                }
-            ],
-            "secrets": [
-                {
-                "name": "DATABASE_PASSWORD",
-                "valueFrom": "arn:aws:secretsmanager:region:account-id:secret:secret-name"
-                }
-            ],
-            "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-                "awslogs-group": "/ecs/django-app",
-                "awslogs-region": "us-east-1",
-                "awslogs-stream-prefix": "ecs"
-                }
-            }
             }
         ]
     }
@@ -140,6 +210,65 @@ docker system prune --volumes
     - Register Fargate task definitions:
     ```bash
     aws ecs register-task-definition \
-        --cli-input-json file://task-definition-fargate.json --region us-east-1
+        --cli-input-json file://$HOME/Documents/ecs/tasks/task-definition-fargate.json --region us-east-1
     ```
     
+9. Create Load Balancer & Target Group
+    - Create Application Load Balancer
+    ```bash
+    aws elbv2 create-load-balancer \
+        --name todo-alb \
+        --subnets subnet-052cff93e26XXXXXX subnet-0d7c750e458XXXXXX \
+        --security-groups sg-0c958aded09XXXXXX \
+        --region us-east-1
+    ```
+
+    - Create target group
+    ```bash
+    aws elbv2 create-target-group \
+        --name todo-tg \
+        --protocol HTTP \
+        --port 8000 \
+        --target-type ip \
+        --vpc-id vpc-016c892653bXXXXXX \
+        --health-check-path /health/ \
+        --region us-east-1
+    ```
+
+10. Add listener that forwards to a target group
+```bash
+aws elbv2 create-listener \
+  --load-balancer-arn arn:aws:elasticloadbalancing:REGION:ACCOUNT_ID:loadbalancer/app/todo-alb/75577a29XXXXX \
+  --protocol HTTP \
+  --port 80 \
+  --default-actions Type=forward,TargetGroupArn=arn:aws:elasticloadbalancing:REGION:ACCOUNT_ID:targetgroup/todo-tg/b661fefe1XXXXX
+```
+
+11. Create ECS Service
+    - EC2 Service:
+    ```bash
+    aws ecs create-service \
+        --cluster todo-cluster-ec2 \
+        --service-name todo-service-ec2 \
+        --task-definition todo-task-ec2:2 \
+        --desired-count 2 \
+        --launch-type EC2 \
+        --load-balancers "targetGroupArn=arn:aws:elasticloadbalancing:us-east-1:226290659927:targetgroup/todo-tg/b661fefe18d2722f,containerName=todo-app-ec2,containerPort=8000" \
+        --region us-east-1
+    ```
+
+    - Fargate Service:
+    ```bash
+    aws ecs create-service \
+        --cluster todo-cluster-fargate \
+        --service-name todo-service-fargate \
+        --task-definition todo-task-fargate \
+        --desired-count 2 \
+        --launch-type FARGATE \
+        --platform-version LATEST \
+        --network-configuration "awsvpcConfiguration={subnets=[subnet-052cff93e26XXXXXX,subnet-0d7c750e458XXXXXX],securityGroups=[sg-0c958aded09XXXXXX],assignPublicIp=ENABLED}" \
+        --load-balancers "targetGroupArn=arn:aws:elasticloadbalancing:REGION:ACCOUNT_ID:targetgroup/todo-tg/b661fefe18XXXXXX,containerName=todo-app-fargate,containerPort=8000" \
+        --region us-east-1
+    ```
+
+## TODO: Deployment Automation using GitHub Actions Workflow
